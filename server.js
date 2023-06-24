@@ -14,6 +14,11 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
+app.use(express.static("public"));
+// app.get("/audio-processing.js", (req, res) => {
+//   res.sendFile(__dirname + "/audio-processing.js");
+// });
+
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
