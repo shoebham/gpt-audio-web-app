@@ -2,13 +2,15 @@
 const socket = io();
 
 // Get DOM elements
-const startButton = document.getElementById("startButton");
+const speakBtn = document.getElementById("speakBtn");
 const stopButton = document.getElementById("stopButton");
 const transcriptDiv = document.getElementById("transcript");
 const helperDiv = document.getElementById("helper");
 const speakButton = document.getElementById("speakButton");
 const responseDiv = document.getElementById("gpt-response");
 const messageDiv = document.getElementById("messages");
+const textInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 let speechTimeoutId;
 const silenceTimeout = 5000;
 var chat = [
@@ -28,10 +30,11 @@ if ("webkitSpeechRecognition" in window) {
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = "en-US";
+  let inputText = "";
   // Silence timeout in milliseconds
 
   // Start speech recognition
-  startButton.addEventListener("click", () => {
+  speakBtn.addEventListener("click", () => {
     helperDiv.innerHTML = "";
     recognition.start();
   });
@@ -39,18 +42,19 @@ if ("webkitSpeechRecognition" in window) {
   recognition.onstart = () => {
     console.log("Speech recognition started");
     transcript = "";
+    inputText = textInput.value;
   };
 
   // this works for every audio event that is detected
   recognition.onresult = (event) => {
+    helperDiv.innerHTML = "Listening...";
     transcript = Array.from(event.results)
       .map((result) => result[0].transcript)
       .join("");
 
     console.log("Transcript:", transcript);
-    document.getElementById("user-input").value = transcript;
+    textInput.value = inputText + transcript;
 
-    console.log(i++);
     speechTimeoutId = setTimeout(() => {
       stopRecognition();
     }, silenceTimeout);
@@ -63,6 +67,7 @@ if ("webkitSpeechRecognition" in window) {
   recognition.onend = () => {
     console.log("Speech recognition ended");
     stopRecognition();
+    preProcessingBeforeResponse();
     // create a sending animation with ...
     // helperDiv.innerHTML = "Sending to GPT-3...";
   };
@@ -78,13 +83,19 @@ socket.on("connect", () => {
 socket.on("audioResponse", (response) => {
   helperDiv.innerHTML = "";
   console.log("Audio response:", response);
-  responseDiv.innerHTML = "GPT response:" + response;
-
   addToChat(transcript, response); // Add the question and response to the chat view
-  speak();
-  startButton.disabled = false;
+  speak(response);
 });
 
+function preProcessingBeforeResponse() {
+  speakBtn.disabled = true;
+  sendBtn.disabled = true;
+}
+function postProcessingAfterResponse() {
+  speakBtn.disabled = false;
+  sendBtn.disabled = false;
+  textInput.value = "";
+}
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
 });
@@ -95,18 +106,15 @@ function stopRecognition() {
   if (speechTimeoutId) clearTimeout(speechTimeoutId);
   isRecognitionStopped = true;
 
-  helperDiv.innerHTML = "Detected silence for 5 seconds, so processing speech";
+  helperDiv.innerHTML = "Detected silence, processing speech...";
   socket.emit("voiceInput", transcript);
-  console.log("Speech recognition ended");
 }
-function speak() {
-  const responseText = responseDiv.textContent;
-
+function speak(responseText) {
   // Create a new SpeechSynthesisUtterance
   const speechUtterance = new SpeechSynthesisUtterance(responseText);
 
   // Speak the response
-  startButton.disabled = true;
+
   speechSynthesis.speak(speechUtterance);
 }
 
@@ -116,14 +124,14 @@ function addToChat(question, response) {
     response: response,
   });
   const message = document.createElement("div");
-  message.id = "message";
+  message.class = "message";
   const questionDiv = document.createElement("div");
   questionDiv.id = "question";
-  const responseDiv = document.createElement("div");
-  responseDiv.id = "response";
+  const answerDiv = document.createElement("div");
+  answerDiv.id = "response";
   questionDiv.innerHTML = `<p><strong>Question:</strong> ${question}</p>`;
-  responseDiv.innerHTML = `<p><strong>Response:</strong> ${response}</p>`;
+  answerDiv.innerHTML = `<p><strong>Response:</strong> ${response}</p>`;
   message.appendChild(questionDiv);
-  message.appendChild(responseDiv);
+  message.appendChild(answerDiv);
   messageDiv.appendChild(message);
 }
