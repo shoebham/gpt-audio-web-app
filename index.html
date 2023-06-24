@@ -2,63 +2,111 @@
 <html>
 
 <head>
-    <title>Speech-to-Text</title>
+    <title>Speech to Text</title>
 </head>
 
 <body>
-    <h1>Speech-to-Text</h1>
-    <button id="startButton">Start Recording</button>
-    <button id="stopButton">Stop Recording</button>
+    <h1>Speech to Text</h1>
+
+    <button id="startButton">Start</button>
+    <button id="stopButton">Stop</button>
+
     <div id="transcript"></div>
 
-    <script>
-        const startButton = document.getElementById('startButton');
-        const stopButton = document.getElementById('stopButton');
-        const transcriptDiv = document.getElementById('transcript');
-        let recognition;
-
-        startButton.addEventListener('click', () => {
-            startRecording();
-        });
-
-        stopButton.addEventListener('click', () => {
-            stopRecording();
-        });
-
-        function startRecording() {
-            recognition = new webkitSpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.continuous = true;
-            recognition.interimResults = true;
-
-            recognition.onstart = () => {
-                console.log('Recording started');
-            };
-
-            recognition.onresult = (event) => {
-                const result = event.results[event.results.length - 1];
-                const transcript = result[0].transcript;
-                transcriptDiv.textContent = transcript;
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-            };
-
-            recognition.start();
-            startButton.disabled = true;
-            stopButton.disabled = false;
-        }
-
-        function stopRecording() {
-            if (recognition) {
-                recognition.stop();
-                recognition = null;
-                startButton.disabled = false;
-                stopButton.disabled = true;
-            }
-        }
-    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <div id="speech-text">
+        Text from Speech:
+    </div>
+    <div id="helper">
+        
+    </div>
+    <div id="gpt-response">
+    </div>
 </body>
+<script>
+    // Connect to the Socket.IO server
+    const socket = io();
+
+    // Get DOM elements
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const transcriptDiv = document.getElementById('transcript');
+    const helperDiv = document.getElementById('helper');
+    // Speech recognition variables
+    let recognition;
+    let transcript = "";
+    // Check if browser supports SpeechRecognition
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        // Start speech recognition
+        startButton.addEventListener('click', () => {
+            recognition.start();
+        });
+
+        // Stop speech recognition
+        // stopButton.addEventListener('click', () => {
+        //     recognition.stop();
+        // });
+
+        // Speech recognition event listeners
+        recognition.onstart = () => {
+            console.log('Speech recognition started');
+        };
+
+        recognition.onresult = (event) => {
+            transcript = Array.from(event.results)
+                .map((result) => result[0].transcript)
+                .join('');
+
+            console.log('Transcript:', transcript);
+            document.getElementById("speech-text").innerHTML = "Speech Text: " + transcript;
+            // transcript="";
+            // Emit the transcript to the server
+        };
+        recognition.onspeechend = () => {
+            helperDiv.innerHTML = "Detected silence for 5 seconds, so processing speech";
+            console.log('Speech recognition ended');
+            // create a sending animation with ...
+            helperDiv.innerHTML = "Sending to GPT-3...";
+        };
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+        };
+
+        recognition.onend = () => {
+
+            helperDiv.innerHTML = "Detected silence for 5 seconds, so processing speech";
+            socket.emit('voiceInput', transcript);
+            transcript = "";
+            console.log('Speech recognition ended');
+            // create a sending animation with ...
+            // helperDiv.innerHTML = "Sending to GPT-3...";
+        };
+    } else {
+        console.error('Speech recognition not supported');
+    }
+
+    // Socket.IO event listeners
+    socket.on('connect', () => {
+        console.log('Connected to server');
+    });
+
+    socket.on('audioResponse', (response) => {
+        helperDiv.innerHTML = "";
+        console.log('Audio response:', response);
+        document.getElementById("gpt-response").innerHTML = "GPT response:" + response;
+        // Display the response on the page
+
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Disconnected from server');
+    });
+</script>
 
 </html>
