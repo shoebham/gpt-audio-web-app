@@ -8,10 +8,15 @@ const helperDiv = document.getElementById("helperText");
 const speakButton = document.getElementById("speakButton");
 const responseDiv = document.getElementById("gpt-response");
 const messagesDiv = document.getElementById("messages");
-const textInput = document.getElementById("userInput");
+const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 const muteBtn = document.getElementById("muteBtn");
 const stopBtn = document.getElementById("stopBtn");
+
+document.getElementById("textInput").addEventListener("input", function () {
+  this.style.height = "auto";
+  this.style.height = this.scrollHeight + "px";
+});
 
 window.utterances = [];
 let speechTimeoutId;
@@ -25,7 +30,7 @@ var chat = [
 
 // when page loads
 window.onload = function () {
-  textInput.focus();
+  userInput.focus();
   muteBtn.disabled = true;
   stopBtn.disabled = true;
   speechSynthesis.cancel();
@@ -51,7 +56,7 @@ if ("webkitSpeechRecognition" in window) {
 
   sendBtn.addEventListener("click", () => {
     helperMessage("");
-    transcript = textInput.value;
+    transcript = userInput.value;
     stopRecognitionWhenSendButtonIsPressed();
   });
 
@@ -74,7 +79,7 @@ if ("webkitSpeechRecognition" in window) {
   recognition.onstart = () => {
     console.log("Speech recognition started");
     transcript = "";
-    inputText = textInput.value;
+    inputText = userInput.value;
   };
 
   // this works for every audio event that is detected
@@ -85,7 +90,7 @@ if ("webkitSpeechRecognition" in window) {
       .join("");
 
     console.log("Transcript:", transcript);
-    textInput.value = inputText + transcript;
+    userInput.value = inputText + transcript;
     if (speechTimeoutId) clearTimeout(speechTimeoutId);
     // stop after 5 seconds of silence
     speechTimeoutId = setTimeout(stopRecognition, silenceTimeout);
@@ -127,16 +132,17 @@ function helperMessage(message) {
 }
 function clearInput() {
   helperMessage("");
-  textInput.value = "";
+  userInput.value = "";
 }
 function stopRecognition() {
   if (speechTimeoutId) clearTimeout(speechTimeoutId);
   isRecognitionStopped = true;
   helperMessage("Detected silence, processing speech...");
+  disableBtn(userInput, true);
   disableBtn(stopBtn, true);
   disableBtn(speakBtn, true);
   disableBtn(sendBtn, true);
-  transcript = textInput.value;
+  transcript = userInput.value;
   socket.emit("voiceInput", transcript);
 }
 
@@ -144,6 +150,8 @@ function stopRecognitionWhenSendButtonIsPressed() {
   if (speechTimeoutId) clearTimeout(speechTimeoutId);
   isRecognitionStopped = true;
   helperMessage("Processing");
+  disableBtn(userInput, true);
+
   disableBtn(stopBtn, true);
   disableBtn(speakBtn, true);
   disableBtn(sendBtn, true);
@@ -156,6 +164,7 @@ function speak(responseText) {
   utterances.push(speechUtterance);
   speechUtterance.onend = () => {
     console.log("Speech finished");
+    disableBtn(userInput, false);
     disableBtn(speakBtn, false);
     disableBtn(sendBtn, false);
     disableBtn(stopBtn, true);
@@ -182,12 +191,13 @@ function addToChat(question, response) {
   answerDiv.classList = "response";
   questionDiv.innerHTML = `<p><strong>Question:</strong> ${question}</p>`;
   answerDiv.innerHTML = `<p><strong>Response:</strong> ${response}</p>`;
+
   message.appendChild(questionDiv);
   message.appendChild(answerDiv);
   message.appendChild(hr);
-  const lastMessage = messagesDiv.lastChild;
-  if (lastMessage.classList == "message")
-    lastMessage.insertBefore(message, lastMessage.nextSibling);
+  const lastMessage = messagesDiv.childNodes[messagesDiv.childElementCount - 1];
+
+  if (lastMessage) lastMessage.appendChild(message);
   else messagesDiv.appendChild(message);
 }
 

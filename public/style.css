@@ -5,7 +5,69 @@
     justify-content: center;
     height: 85vh;
 }
+/* Light Mode */
+button {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 2px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    border: 2px solid #000;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #000;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+#textInput {
+    display: flex;
+    flex-direction: column;
+}
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    /* Add any additional styles for disabled buttons */
+}
+#userInput {
+    flex-grow: 1;
+    height: auto;
+    min-height: 30px;
+    max-height: 100px;
+    overflow-y: auto;
+    resize: vertical;
+}
+button:hover {
+    background-color: #000;
+    color: #fff;
+}
 
+button:active {
+    background-color: #333;
+    color: #fff;
+}
+
+button:focus {
+    outline: none;
+}
+
+/* Dark Mode */
+.dark-mode button {
+    border-color: #fff;
+    background-color: #000;
+    color: #fff;
+}
+
+.dark-mode button:hover {
+    background-color: #fff;
+    color: #000;
+}
+
+.dark-mode button:active {
+    background-color: #333;
+    color: #fff;
+}
 #chat {
     border: 1px solid black;
     width: 500px;
@@ -15,12 +77,10 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px;
+    background-color: #f9f9f9;
+    /* Light mode background color */
 }
 
-#helper {
-    /* Styles for the helper section */
-    margin-bottom: 10px;
-}
 #helper {
     display: flex;
     align-items: center;
@@ -32,8 +92,8 @@
     flex: 1;
     text-align: center;
 }
+
 #messages {
-    /* Styles for the messages section */
     flex-grow: 1;
     display: flex;
     flex-direction: column-reverse;
@@ -66,12 +126,64 @@
 
 .message {
     width: 100%;
-        display: flex;
-        flex-direction: column;
-    
+    display: flex;
+    flex-direction: column;
 }
-
+hr {
+    width: 100%;
+    margin: 10px 0;
+    border: none;
+    border-top: 1px solid #000000;
+}
+.dark-mode hr {
+    width: 100%;
+        margin: 10px 0;
+        border: none;
+        border-top: 1px solid #ccc;
+}
 #heading {
     height: fit-content;
 }
 
+/* Dark mode styles */
+
+.dark-mode {
+    background-color: #000000;
+    /* Dark mode background color */
+    color: #f9f9f9;
+    /* Dark mode text color */
+}
+
+.dark-mode #chat {
+    background-color: #000000;
+    /* Dark mode chat background color */
+    border-color: #666;
+    /* Dark mode chat border color */
+}
+
+.dark-mode #helperText {
+    color: #f9f9f9;
+    /* Dark mode helper text color */
+}
+
+.dark-mode #messages {
+    color: #f9f9f9;
+    /* Dark mode message text color */
+}
+
+.dark-mode #userInput {
+    background-color: #444;
+    /* Dark mode user input background color */
+    color: #f9f9f9;
+    /* Dark mode user input text color */
+}
+
+.dark-mode .message {
+    color: #f9f9f9;
+    /* Dark mode message text color */
+}
+
+/* add a transition to dark mode */
+body, #container,#chat, #helper, #helperText, #messages, #input, #textInput, #userInput, #sendBtn, .message, hr{
+    transition: background-color 0.5s ease;
+}
