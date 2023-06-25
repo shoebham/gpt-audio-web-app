@@ -50,17 +50,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post("/pusher/auth", (req, res) => {
-  const socketId = req.body.socket_id;
-  const channel = req.body.channel_name;
-  const auth = pusher.authenticate(socketId, channel);
-  res.send(auth);
-});
-
 // socket.on("voiceInput", async (transcript) => {
 app.post("/pusher/webhook", async (req, res) => {
-  const transcript = req.body.transcript;
   console.log(req);
+  const transcript = req.body.transcript;
   console.log("Received voice input:", transcript);
 
   try {

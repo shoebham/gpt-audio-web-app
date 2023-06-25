@@ -139,7 +139,7 @@ function stopRecognition() {
   axios
     .post("/pusher/webhook", { transcript })
     .then((response) => {
-      console.log("Transcript sent to server successfully");
+      console.log("Transcript sent to server successfully", response.data);
       clearInput();
     })
     .catch((error) => {
