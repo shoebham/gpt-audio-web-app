@@ -136,15 +136,9 @@ function stopRecognition() {
   transcript = textInput.value;
 
   // send to server with pusher
-  axios
-    .post("/pusher/webhook", { transcript })
-    .then((response) => {
-      console.log("Transcript sent to server successfully", response.data);
-      clearInput();
-    })
-    .catch((error) => {
-      console.error("Error sending transcript to server:", error);
-    });
+  axios.post("/pusher/webhook", { transcript }).catch((error) => {
+    console.error("Error sending transcript to server:", error);
+  });
   // socket.emit("voiceInput", transcript);
 }
 
