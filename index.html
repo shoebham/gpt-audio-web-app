@@ -2,51 +2,54 @@
 <html>
 
 <head>
-    <title>gpt-audio-web-app</title>
+   <title>gpt-audio-web-app</title>
 </head>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
-  crossorigin="anonymous" referrerpolicy="no-referrer" />
-<body class="">
-  <center><h1 id="heading">gpt-audio-web-app</h1></center>
-  <button id="toggle-theme" style="float:right">
-    <i class="fas fa-moon" ></i>
-  </button>
-  <script src="/socket.io/socket.io.js"></script>    
-<div id="container">
-    <div id="chat">
-        <div id="helper">
-          <div id="helperText"></div>
-          <button id="muteBtn">
-            <!-- mute icon -->
-            <i class="fas fa-volume-mute"></i>
-          </button>
-        </div>
-        <div id="messages"></div>
-        <div id="input">
-            <div id="textInput">
-                <input type="text" id="userInput" placeholder="Type here..." oninput="checkInput()" />
-            </div>
-                <button id="speakBtn">
-                  <i class="fas fa-microphone"></i>
-                </button>
-                <button id="stopBtn">
-                  <i class="fas fa-stop"></i>
-                </button>
-                <button id="sendBtn" disabled>
-                  <i class="fas fa-paper-plane"></i>
-                </button>
-            <!-- </div> -->
+   integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+   crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-        </div>
-    </div>
-    </div>
+<body class="">
+   <center>
+      <h1 id="heading">gpt-audio-web-app</h1>
+   </center>
+   <button id="toggle-theme" style="float: right;">
+      <i class="fas fa-moon"></i>
+   </button>
+   <script src="/socket.io/socket.io.js"></script>
+   <div id="container">
+      <div id="chat">
+         <div id="helper">
+            <div id="helperText"></div>
+            <button id="muteBtn">
+               <!-- mute icon -->
+               <i class="fas fa-volume-mute"></i>
+            </button>
+         </div>
+         <div id="messages"></div>
+         <div id="input">
+            <div id="textInput">
+               <input type="text" id="userInput" placeholder="Type here..." oninput="checkInput()" />
+            </div>
+            <button id="speakBtn">
+               <i class="fas fa-microphone"></i>
+            </button>
+            <button id="stopBtn">
+               <i class="fas fa-stop"></i>
+            </button>
+            <button id="sendBtn" disabled>
+               <i class="fas fa-paper-plane"></i>
+            </button>
+            <!-- </div> -->
+         </div>
+      </div>
+   </div>
 </body>
 <script src="audio-processing.js"></script>
 <script>
-  document.getElementById("toggle-theme").addEventListener("click", function() {
-    document.body.classList.toggle("dark-mode");
-  });
+   document.getElementById("toggle-theme").addEventListener("click", function () {
+      document.body.classList.toggle("dark-mode");
+   });
 </script>
+
 </html>
