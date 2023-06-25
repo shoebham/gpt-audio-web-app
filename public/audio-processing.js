@@ -26,24 +26,28 @@ var chat = [
 // when page loads
 window.onload = function () {
   textInput.focus();
-  muteBtn.disabled = true;
-  stopBtn.disabled = true;
+  disableBtn(muteBtn, true);
+  disableBtn(stopBtn, true);
   speechSynthesis.cancel();
 };
 
 muteBtn.addEventListener("click", () => {
   speechSynthesis.cancel();
-  enableBtns();
+  disableBtn(muteBtn, true);
+  disableBtn(speakBtn, false);
+  disableBtn(stopBtn, true);
+  disableBtn(userInput, false);
 });
 
 // Speech recognition variables
 let recognition;
 let transcript = "";
 let isRecognitionStopped = false;
-var i = 1;
+
 // Check if browser supports SpeechRecognition
 if ("webkitSpeechRecognition" in window) {
   recognition = new webkitSpeechRecognition();
+
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = "en-US";
@@ -51,7 +55,6 @@ if ("webkitSpeechRecognition" in window) {
 
   sendBtn.addEventListener("click", () => {
     helperMessage("");
-    transcript = textInput.value;
     stopRecognitionWhenSendButtonIsPressed();
   });
 
@@ -120,16 +123,11 @@ socket.on("audioResponse", (response) => {
   addToChat(transcript, response);
   speak(response);
   disableBtn(muteBtn, false);
+  transcript = "";
 });
 
-function helperMessage(message) {
-  helperDiv.innerHTML = message;
-}
-function clearInput() {
-  helperMessage("");
-  textInput.value = "";
-}
 function stopRecognition() {
+  if (!isRecognitionStopped) recognition.stop();
   if (speechTimeoutId) clearTimeout(speechTimeoutId);
   isRecognitionStopped = true;
   helperMessage("Detected silence, processing speech...");
@@ -139,18 +137,22 @@ function stopRecognition() {
   disableBtn(sendBtn, true);
   transcript = textInput.value;
   socket.emit("voiceInput", transcript);
+  clearInput();
 }
 
 function stopRecognitionWhenSendButtonIsPressed() {
+  if (!isRecognitionStopped) recognition.stop();
   if (speechTimeoutId) clearTimeout(speechTimeoutId);
   isRecognitionStopped = true;
+  console.log("Stop recognition when send button is pressed");
   helperMessage("Processing");
   disableBtn(textInput, true);
-
   disableBtn(stopBtn, true);
   disableBtn(speakBtn, true);
   disableBtn(sendBtn, true);
+  transcript = textInput.value;
   socket.emit("voiceInput", transcript);
+  clearInput();
 }
 function speak(responseText) {
   // Create a new SpeechSynthesisUtterance
@@ -165,7 +167,6 @@ function speak(responseText) {
     disableBtn(stopBtn, true);
     clearInput();
     muteBtn.disabled = true;
-    transcript = "";
   };
   // Speak the response
   speechSynthesis.speak(speechUtterance);
@@ -199,6 +200,14 @@ function addToChat(question, response) {
   else messagesDiv.appendChild(message);
 }
 
+function checkInput() {
+  if (userInput.value.trim().length > 0) {
+    sendBtn.disabled = false; // Enable the send button if there is text
+  } else {
+    sendBtn.disabled = true; // Disable the send button if there is no text
+  }
+}
+
 function disableBtn() {
   speakBtn.disabled = true;
   sendBtn.disabled = true;
@@ -212,4 +221,12 @@ function enableBtns() {
 
 function disableBtn(btn, val) {
   btn.disabled = val;
+}
+
+function helperMessage(message) {
+  helperDiv.innerHTML = message;
+}
+function clearInput() {
+  helperMessage("");
+  textInput.value = "";
 }
