@@ -26,7 +26,7 @@
         <div id="messages"></div>
         <div id="input">
             <div id="textInput">
-                <input type="text" id="userInput" placeholder="Type here..." />
+                <input type="text" id="userInput" placeholder="Type here..." oninput="checkInput()" />
             </div>
                 <button id="speakBtn">
                   <i class="fas fa-microphone"></i>
@@ -34,7 +34,7 @@
                 <button id="stopBtn">
                   <i class="fas fa-stop"></i>
                 </button>
-                <button id="sendBtn">
+                <button id="sendBtn" disabled>
                   <i class="fas fa-paper-plane"></i>
                 </button>
             <!-- </div> -->
