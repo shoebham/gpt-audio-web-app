@@ -14,7 +14,7 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-app.use(express.static("public"));
+app.use(express.static(__dirname + "/public/"));
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
