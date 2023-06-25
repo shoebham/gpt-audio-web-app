@@ -13,6 +13,7 @@ const stopBtn = document.getElementById("stopBtn");
 window.utterances = [];
 var speechTimeoutId;
 const silenceTimeout = 5000;
+var isCancelled = false;
 
 // import pusher
 const pusher = new Pusher("ca9f7c266c48518e49ce", {
@@ -40,13 +41,23 @@ window.onload = function () {
   speechSynthesis.cancel();
 };
 
-muteBtn.addEventListener("click", () => {
-  speechSynthesis.cancel();
-  disableBtn(muteBtn, true);
-  disableBtn(speakBtn, false);
-  disableBtn(stopBtn, true);
-  disableBtn(userInput, false);
+muteBtn.addEventListener("click", async () => {
+  isCancelled = true;
+  console.log("Speech finished");
+  helperMessage("Muting...");
+  await cancelSpeech().then(() => {
+    disableBtn(textInput, false);
+    disableBtn(speakBtn, false);
+    disableBtn(sendBtn, false);
+    disableBtn(stopBtn, true);
+    clearInput();
+    helperMessage("");
+    muteBtn.disabled = true;
+    console.log("Speech synthesis canceled.");
+  });
 });
+
+// Usage
 
 // Speech recognition variables
 let recognition;
@@ -64,6 +75,8 @@ if ("webkitSpeechRecognition" in window) {
 
   // when send button is pressed
   sendBtn.addEventListener("click", () => {
+    isCancelled = false;
+
     helperMessage("");
     helperMessage("Processing...");
     console.log("Stop recognition when send button is pressed");
@@ -72,6 +85,8 @@ if ("webkitSpeechRecognition" in window) {
 
   // for speech to text
   speakBtn.addEventListener("click", () => {
+    // reset the cancellation flag
+    isCancelled = false;
     helperMessage("");
     disableBtn(stopBtn, false);
     disableBtn(speakBtn, true);
@@ -128,7 +143,6 @@ if ("webkitSpeechRecognition" in window) {
 function stopRecognition() {
   if (!isRecognitionStopped) recognition.stop();
   if (speechTimeoutId) {
-    helperMessage("Silence detected. Processing speech...");
     clearTimeout(speechTimeoutId);
   }
   isRecognitionStopped = true;
@@ -136,9 +150,16 @@ function stopRecognition() {
   transcript = textInput.value;
 
   // send to server with pusher
-  axios.post("/pusher/webhook", { transcript }).catch((error) => {
-    console.error("Error sending transcript to server:", error);
-  });
+  axios
+    .post("/pusher/webhook", { transcript })
+    .then((response) => {
+      clearInput();
+      transcript = "";
+      console.log("Response from server:", response);
+    })
+    .catch((error) => {
+      console.error("Error sending transcript to server:", error);
+    });
   // socket.emit("voiceInput", transcript);
 }
 
@@ -148,11 +169,12 @@ function disableAll() {
   disableBtn(speakBtn, true);
   disableBtn(sendBtn, true);
 }
+var speechUtterance;
 
 function speak(responseText) {
-  var speechUtterance;
+  if (isCancelled) return;
   speechUtterance = new SpeechSynthesisUtterance(responseText);
-
+  window.utterances.push(speechUtterance);
   // when text-to-speech event ends
   speechUtterance.onend = () => {
     console.log("Speech finished");
@@ -167,6 +189,12 @@ function speak(responseText) {
   speechSynthesis.speak(speechUtterance);
 }
 
+function cancelSpeech() {
+  return new Promise((resolve) => {
+    speechSynthesis.cancel();
+    setTimeout(resolve, 1000); // Adjust the delay as needed
+  });
+}
 function addToChat(question, response) {
   // sanitize question
   question = question.replace(/</g, "&lt;").replace(/>/g, "&gt;");

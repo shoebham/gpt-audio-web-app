@@ -23,7 +23,6 @@ const bodyParser = require("body-parser");
 // const Pusher = require("pusher-js");
 
 const Pusher = require("pusher");
-const { log } = require("console");
 
 const pusher = new Pusher({
   appId: "1624430",
