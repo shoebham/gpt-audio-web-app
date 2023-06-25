@@ -1,12 +1,12 @@
 const express = require("express");
 const fs = require("fs");
-const options = {
-  key: fs.readFileSync("server.key"),
-  cert: fs.readFileSync("server.cert"),
-};
+// const options = {
+//   key: fs.readFileSync("server.key"),
+//   cert: fs.readFileSync("server.cert"),
+// };
 const app = express();
 const http = require("http").createServer(app);
-const https = require("https").createServer(options, app);
+// const https = require("https").createServer(options, app);
 const io = require("socket.io")(http);
 const axios = require("axios");
 
@@ -89,6 +89,6 @@ app.post("/pusher/webhook", async (req, res) => {
 });
 
 const port = 3000;
-https.listen(port, () => {
+http.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
