@@ -22,7 +22,7 @@ const pusher = new Pusher("ca9f7c266c48518e49ce", {
 
 const channel = pusher.subscribe("chat-channel");
 // Handle audio response event from Pusher
-channel.bind("audio-response", function (data) {
+channel.bind("audio-response", (data) => {
   const botResponse = data.botResponse;
   console.log("botResponse", botResponse);
   clearInput();
@@ -31,6 +31,7 @@ channel.bind("audio-response", function (data) {
   disableBtn(muteBtn, false);
   transcript = "";
 });
+
 // when page loads
 window.onload = function () {
   textInput.focus();
@@ -157,7 +158,7 @@ function disableAll() {
 function speak(responseText) {
   var speechUtterance;
   speechUtterance = new SpeechSynthesisUtterance(responseText);
-  utterances.push(speechUtterance);
+
   // when text-to-speech event ends
   speechUtterance.onend = () => {
     console.log("Speech finished");
