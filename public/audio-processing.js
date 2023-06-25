@@ -48,24 +48,27 @@ if ("webkitSpeechRecognition" in window) {
   recognition.interimResults = true;
   recognition.lang = "en-US";
   let inputText = "";
-  // Silence timeout in milliseconds
 
   sendBtn.addEventListener("click", () => {
-    helperDiv.innerHTML = "";
+    helperMessage("");
     transcript = textInput.value;
     stopRecognitionWhenSendButtonIsPressed();
   });
 
   // Start speech recognition
   speakBtn.addEventListener("click", () => {
-    helperDiv.innerHTML = "";
-    stopBtn.disabled = false;
-    speakBtn.disabled = true;
+    helperMessage("");
+    disableBtn(stopBtn, false);
+    disableBtn(speakBtn, true);
     recognition.start();
   });
 
   stopBtn.addEventListener("click", () => {
-    stopRecognition();
+    if (speechTimeoutId) clearTimeout(speechTimeoutId);
+    disableBtn(stopBtn, true);
+    disableBtn(speakBtn, false);
+    disableBtn(sendBtn, false);
+    disableBtn(muteBtn, true);
   });
 
   recognition.onstart = () => {
@@ -76,17 +79,16 @@ if ("webkitSpeechRecognition" in window) {
 
   // this works for every audio event that is detected
   recognition.onresult = (event) => {
-    helperDiv.innerHTML = "Listening...";
+    helperMessage("Listening...");
     transcript = Array.from(event.results)
       .map((result) => result[0].transcript)
       .join("");
 
     console.log("Transcript:", transcript);
     textInput.value = inputText + transcript;
-
-    speechTimeoutId = setTimeout(() => {
-      stopRecognition();
-    }, silenceTimeout);
+    if (speechTimeoutId) clearTimeout(speechTimeoutId);
+    // stop after 5 seconds of silence
+    speechTimeoutId = setTimeout(stopRecognition, silenceTimeout);
   };
 
   recognition.onerror = (event) => {
@@ -95,7 +97,9 @@ if ("webkitSpeechRecognition" in window) {
 
   recognition.onend = () => {
     console.log("Speech recognition ended");
-    stopRecognition();
+    if (!isRecognitionStopped) {
+      stopRecognition();
+    }
   };
 } else {
   console.error("Speech recognition not supported");
@@ -105,48 +109,59 @@ if ("webkitSpeechRecognition" in window) {
 socket.on("connect", () => {
   console.log("Connected to server");
 });
-
-socket.on("audioResponse", (response) => {
-  helperDiv.innerHTML = "";
-  console.log("Audio response:", response);
-  textInput.value = "";
-  addToChat(transcript, response);
-  speak(response);
-  muteBtn.disabled = false;
-});
-
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
 });
 
+// when server sends audio response
+socket.on("audioResponse", (response) => {
+  console.log("Audio response:", response);
+  clearInput();
+  addToChat(transcript, response);
+  speak(response);
+  disableBtn(muteBtn, false);
+});
+
+function helperMessage(message) {
+  helperDiv.innerHTML = message;
+}
+function clearInput() {
+  helperMessage("");
+  textInput.value = "";
+}
 function stopRecognition() {
-  if (isRecognitionStopped) return;
-  // clear time out if speechtimeoutid is defined
   if (speechTimeoutId) clearTimeout(speechTimeoutId);
   isRecognitionStopped = true;
-
-  helperDiv.innerHTML = "Detected silence, processing speech...";
-  disableBtns();
+  helperMessage("Detected silence, processing speech...");
+  disableBtn(stopBtn, true);
+  disableBtn(speakBtn, true);
+  disableBtn(sendBtn, true);
+  transcript = textInput.value;
   socket.emit("voiceInput", transcript);
 }
+
 function stopRecognitionWhenSendButtonIsPressed() {
   if (speechTimeoutId) clearTimeout(speechTimeoutId);
   isRecognitionStopped = true;
-
-  helperDiv.innerHTML = "Processing";
-  disableBtns();
+  helperMessage("Processing");
+  disableBtn(stopBtn, true);
+  disableBtn(speakBtn, true);
+  disableBtn(sendBtn, true);
   socket.emit("voiceInput", transcript);
 }
 function speak(responseText) {
   // Create a new SpeechSynthesisUtterance
   var speechUtterance;
-
   speechUtterance = new SpeechSynthesisUtterance(responseText);
   utterances.push(speechUtterance);
   speechUtterance.onend = () => {
     console.log("Speech finished");
-    enableBtns();
+    disableBtn(speakBtn, false);
+    disableBtn(sendBtn, false);
+    disableBtn(stopBtn, true);
+    clearInput();
     muteBtn.disabled = true;
+    transcript = "";
   };
   // Speak the response
   speechSynthesis.speak(speechUtterance);
@@ -157,6 +172,7 @@ function addToChat(question, response) {
     question: transcript,
     response: response,
   });
+
   const message = document.createElement("div");
   const questionDiv = document.createElement("div");
   const answerDiv = document.createElement("div");
@@ -169,14 +185,13 @@ function addToChat(question, response) {
   message.appendChild(questionDiv);
   message.appendChild(answerDiv);
   message.appendChild(hr);
-
   const lastMessage = messagesDiv.lastChild;
   if (lastMessage.classList == "message")
     lastMessage.insertBefore(message, lastMessage.nextSibling);
   else messagesDiv.appendChild(message);
 }
 
-function disableBtns() {
+function disableBtn() {
   speakBtn.disabled = true;
   sendBtn.disabled = true;
   stopBtn.disabled = true;
@@ -185,4 +200,8 @@ function disableBtns() {
 function enableBtns() {
   speakBtn.disabled = false;
   sendBtn.disabled = false;
+}
+
+function disableBtn(btn, val) {
+  btn.disabled = val;
 }
