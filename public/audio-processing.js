@@ -1,16 +1,19 @@
-// Connect to the Socket.IO server
 const socket = io();
 
-// Get DOM elements
+// dom elements
 const speakBtn = document.getElementById("speakBtn");
 const stopButton = document.getElementById("stopButton");
 const transcriptDiv = document.getElementById("transcript");
-const helperDiv = document.getElementById("helper");
+const helperDiv = document.getElementById("helperText");
 const speakButton = document.getElementById("speakButton");
 const responseDiv = document.getElementById("gpt-response");
-const messageDiv = document.getElementById("messages");
+const messagesDiv = document.getElementById("messages");
 const textInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
+const muteBtn = document.getElementById("muteBtn");
+const stopBtn = document.getElementById("stopBtn");
+
+window.utterances = [];
 let speechTimeoutId;
 const silenceTimeout = 5000;
 var chat = [
@@ -19,6 +22,20 @@ var chat = [
     response: "",
   },
 ];
+
+// when page loads
+window.onload = function () {
+  textInput.focus();
+  muteBtn.disabled = true;
+  stopBtn.disabled = true;
+  speechSynthesis.cancel();
+};
+
+muteBtn.addEventListener("click", () => {
+  speechSynthesis.cancel();
+  enableBtns();
+});
+
 // Speech recognition variables
 let recognition;
 let transcript = "";
@@ -33,10 +50,22 @@ if ("webkitSpeechRecognition" in window) {
   let inputText = "";
   // Silence timeout in milliseconds
 
+  sendBtn.addEventListener("click", () => {
+    helperDiv.innerHTML = "";
+    transcript = textInput.value;
+    stopRecognitionWhenSendButtonIsPressed();
+  });
+
   // Start speech recognition
   speakBtn.addEventListener("click", () => {
     helperDiv.innerHTML = "";
+    stopBtn.disabled = false;
+    speakBtn.disabled = true;
     recognition.start();
+  });
+
+  stopBtn.addEventListener("click", () => {
+    stopRecognition();
   });
 
   recognition.onstart = () => {
@@ -67,9 +96,6 @@ if ("webkitSpeechRecognition" in window) {
   recognition.onend = () => {
     console.log("Speech recognition ended");
     stopRecognition();
-    preProcessingBeforeResponse();
-    // create a sending animation with ...
-    // helperDiv.innerHTML = "Sending to GPT-3...";
   };
 } else {
   console.error("Speech recognition not supported");
@@ -83,19 +109,12 @@ socket.on("connect", () => {
 socket.on("audioResponse", (response) => {
   helperDiv.innerHTML = "";
   console.log("Audio response:", response);
-  addToChat(transcript, response); // Add the question and response to the chat view
+  textInput.value = "";
+  addToChat(transcript, response);
   speak(response);
+  muteBtn.disabled = false;
 });
 
-function preProcessingBeforeResponse() {
-  speakBtn.disabled = true;
-  sendBtn.disabled = true;
-}
-function postProcessingAfterResponse() {
-  speakBtn.disabled = false;
-  sendBtn.disabled = false;
-  textInput.value = "";
-}
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
 });
@@ -107,14 +126,29 @@ function stopRecognition() {
   isRecognitionStopped = true;
 
   helperDiv.innerHTML = "Detected silence, processing speech...";
+  disableBtns();
+  socket.emit("voiceInput", transcript);
+}
+function stopRecognitionWhenSendButtonIsPressed() {
+  if (speechTimeoutId) clearTimeout(speechTimeoutId);
+  isRecognitionStopped = true;
+
+  helperDiv.innerHTML = "Processing";
+  disableBtns();
   socket.emit("voiceInput", transcript);
 }
 function speak(responseText) {
   // Create a new SpeechSynthesisUtterance
-  const speechUtterance = new SpeechSynthesisUtterance(responseText);
+  var speechUtterance;
 
+  speechUtterance = new SpeechSynthesisUtterance(responseText);
+  utterances.push(speechUtterance);
+  speechUtterance.onend = () => {
+    console.log("Speech finished");
+    enableBtns();
+    muteBtn.disabled = true;
+  };
   // Speak the response
-
   speechSynthesis.speak(speechUtterance);
 }
 
@@ -124,14 +158,31 @@ function addToChat(question, response) {
     response: response,
   });
   const message = document.createElement("div");
-  message.class = "message";
   const questionDiv = document.createElement("div");
-  questionDiv.id = "question";
   const answerDiv = document.createElement("div");
-  answerDiv.id = "response";
+  const hr = document.createElement("hr");
+  message.classList = "message";
+  questionDiv.classList = "question";
+  answerDiv.classList = "response";
   questionDiv.innerHTML = `<p><strong>Question:</strong> ${question}</p>`;
   answerDiv.innerHTML = `<p><strong>Response:</strong> ${response}</p>`;
   message.appendChild(questionDiv);
   message.appendChild(answerDiv);
-  messageDiv.appendChild(message);
+  message.appendChild(hr);
+
+  const lastMessage = messagesDiv.lastChild;
+  if (lastMessage.classList == "message")
+    lastMessage.insertBefore(message, lastMessage.nextSibling);
+  else messagesDiv.appendChild(message);
+}
+
+function disableBtns() {
+  speakBtn.disabled = true;
+  sendBtn.disabled = true;
+  stopBtn.disabled = true;
+}
+
+function enableBtns() {
+  speakBtn.disabled = false;
+  sendBtn.disabled = false;
 }

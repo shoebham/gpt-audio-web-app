@@ -2,90 +2,32 @@
 <html>
 
 <head>
-    <title>Speech to Text</title>
+    <title>gpt-audio-web-app</title>
 </head>
-
-<style>
-#container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-}
-
-#chat {
-  border: 1px solid black;
-  width: 500px;
-  height: 500px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-}
-
-#helper {
-  /* Styles for the helper section */
-  margin-bottom: 10px;
-}
-
-#messages {
-  /* Styles for the messages section */
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-start;
-  overflow-y: auto;
-}
-#input {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: space-between;
-  width: 100%;
-}
-#text-input {
-  flex-grow: 1;
-  margin-right: 10px;
-}
-
-#user-input {
-  width: 100%;
-}
-#send-button {
-  margin-left: auto;
-  margin-right: auto;
-}
-</style>
+<link rel="stylesheet" href="style.css">
 <body>
-    <h1>Speech to Text</h1>
+    <center><h1 id="heading">gpt-audio-web-app</h1></center>
     <script src="/socket.io/socket.io.js"></script>    
-    <div id="speech-text">
-        Text from Speech:
-    </div>
-    <div id="gpt-response"></div>
-        <div id="chat-view"></div> <!-- Add the chat view div -->
-
-    <button id="speakButton" disabled>Speak Response</button>
-
-    <div id="container">
+<div id="container">
     <div id="chat">
         <div id="helper">
-
+          <div id="helperText"></div>
+          <button id="muteBtn">Mute</button>
         </div>
         <div id="messages">
             
 
         </div>
         <div id="input">
-            <div id="text-input">
-                <input type="text" id="user-input" placeholder="Type here..." />
-                <button id="send-button">Send</button>
+            <div id="textInput">
+                <input type="text" id="userInput" placeholder="Type here..." />
             </div>
-            <div id="audio-input">
-                <button id="startButton">Speak</button>
-            </div>
+            <!-- <div id="input-btns"> -->
+                <button id="speakBtn">Speak</button>
+                <button id="stopBtn">Stop </button>
+                <button id="sendBtn">Send</button>
+            <!-- </div> -->
+
         </div>
     </div>
     </div>

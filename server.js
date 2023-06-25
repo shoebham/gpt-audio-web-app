@@ -39,13 +39,14 @@ io.on("connection", (socket) => {
           { role: "user", content: transcript },
         ],
       });
+
       let botResponse = completion.data.choices[0].message.content;
       console.log(botResponse);
       // Convert the bot response to speech using text-to-speech library or service of your choice
       // Send the audio response back to the client
       socket.emit("audioResponse", botResponse);
     } catch (error) {
-      console.error("OpenAI API error:", completion.data.choices[0].message);
+      console.error("OpenAI API error:", error);
     }
   });
 });
