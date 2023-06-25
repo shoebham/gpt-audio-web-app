@@ -57,40 +57,36 @@ app.post("/pusher/auth", (req, res) => {
   res.send(auth);
 });
 
-io.on("connection", (socket) => {
-  console.log("A user connected");
+// socket.on("voiceInput", async (transcript) => {
+app.post("/pusher/webhook", async (req, res) => {
+  const transcript = req.body.transcript;
+  console.log(req);
 
-  // socket.on("voiceInput", async (transcript) => {
-  app.post("/pusher/webhook", async (req, res) => {
-    const transcript = req.body.transcript;
-    console.log(req);
+  console.log("Received voice input:", transcript);
 
-    console.log("Received voice input:", transcript);
+  try {
+    // Send the transcript to OpenAI API as a prompt
+    // Send the transcript to OpenAI API as a prompt
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: transcript },
+      ],
+    });
 
-    try {
-      // Send the transcript to OpenAI API as a prompt
-      // Send the transcript to OpenAI API as a prompt
-      const completion = await openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: transcript },
-        ],
-      });
-
-      let botResponse = completion.data.choices[0].message.content;
-      console.log(botResponse);
-      // Convert the bot response to speech using text-to-speech library or service of your choice
-      // Send the audio response back to the client
-      // socket.emit("audioResponse", botResponse);
-      pusher.trigger("chat-channel", "audio-response", {
-        botResponse: botResponse,
-      });
-      res.sendStatus(200);
-    } catch (error) {
-      console.error("OpenAI API error:", error);
-    }
-  });
+    let botResponse = completion.data.choices[0].message.content;
+    console.log(botResponse);
+    // Convert the bot response to speech using text-to-speech library or service of your choice
+    // Send the audio response back to the client
+    // socket.emit("audioResponse", botResponse);
+    pusher.trigger("chat-channel", "audio-response", {
+      botResponse: botResponse,
+    });
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("OpenAI API error:", error);
+  }
 });
 
 const port = 3000;

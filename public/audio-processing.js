@@ -1,4 +1,3 @@
-const socket = io();
 // dom elements
 const speakBtn = document.getElementById("speakBtn");
 const stopButton = document.getElementById("stopButton");
