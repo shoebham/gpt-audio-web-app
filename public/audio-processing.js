@@ -76,7 +76,6 @@ if ("webkitSpeechRecognition" in window) {
   // when send button is pressed
   sendBtn.addEventListener("click", () => {
     isCancelled = false;
-
     helperMessage("");
     helperMessage("Processing...");
     console.log("Stop recognition when send button is pressed");
@@ -86,6 +85,7 @@ if ("webkitSpeechRecognition" in window) {
   // for speech to text
   speakBtn.addEventListener("click", () => {
     // reset the cancellation flag
+    isRecognitionStopped = false;
     isCancelled = false;
     helperMessage("");
     disableBtn(stopBtn, false);
@@ -122,6 +122,7 @@ if ("webkitSpeechRecognition" in window) {
     // stop after 5 seconds of silence
     speechTimeoutId = setTimeout(() => {
       console.log("inside timeout");
+      helperMessage("Detected silence. Processing...");
       stopRecognition();
     }, silenceTimeout);
   };
@@ -154,7 +155,7 @@ function stopRecognition() {
     .post("/pusher/webhook", { transcript })
     .then((response) => {
       clearInput();
-      transcript = "";
+
       console.log("Response from server:", response);
     })
     .catch((error) => {
@@ -177,12 +178,13 @@ function speak(responseText) {
   window.utterances.push(speechUtterance);
   // when text-to-speech event ends
   speechUtterance.onend = () => {
-    console.log("Speech finished");
+    console.log("Speech finished inside on end");
     disableBtn(textInput, false);
     disableBtn(speakBtn, false);
     disableBtn(sendBtn, false);
     disableBtn(stopBtn, true);
     clearInput();
+
     muteBtn.disabled = true;
   };
   // Speak the response
