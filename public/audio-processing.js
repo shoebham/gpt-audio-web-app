@@ -14,6 +14,14 @@ const stopBtn = document.getElementById("stopBtn");
 window.utterances = [];
 let speechTimeoutId;
 const silenceTimeout = 5000;
+const Pusher = require("pusher");
+
+const pusher = new Pusher("YOUR_PUSHER_KEY", {
+  cluster: "YOUR_PUSHER_CLUSTER",
+  encrypted: true,
+});
+
+const channel = pusher.subscribe("chat-channel");
 
 // when page loads
 window.onload = function () {
@@ -114,7 +122,15 @@ socket.on("connect", () => {
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
 });
-
+channel.bind("audio-response", function (data) {
+  const botResponse = data.botResponse;
+  console.log("Audio response:", botResponse);
+  clearInput();
+  addToChat(transcript, botResponse);
+  speak(botResponse);
+  disableBtn(muteBtn, false);
+  transcript = "";
+});
 // when server sends audio response
 socket.on("audioResponse", (response) => {
   console.log("Audio response:", response);

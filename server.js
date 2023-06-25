@@ -1,8 +1,13 @@
 const express = require("express");
+const fs = require("fs");
+// const options = {
+//   key: fs.readFileSync("server.key"),
+//   cert: fs.readFileSync("server.cert"),
+// };
 const app = express();
 const http = require("http").createServer(app);
+const https = require("https").createServer(options, app);
 const io = require("socket.io")(http);
-const fs = require("fs");
 const axios = require("axios");
 
 const env = require("dotenv").config();
@@ -14,16 +19,45 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
+const Pusher = require("pusher");
+
+const pusher = new Pusher({
+  appId: "1624430",
+  key: process.env.PUSHER_KEY,
+  secret: process.env.PUSHER_SECRET,
+  cluster: "ap2",
+  useTLS: true,
+});
+
 app.use(express.static(__dirname + "/public/"));
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
+// Enable CORS for all routes
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
+
+app.post("/pusher/auth", (req, res) => {
+  const socketId = req.body.socket_id;
+  const channel = req.body.channel_name;
+  const auth = pusher.authenticate(socketId, channel);
+  res.send(auth);
+});
+
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  socket.on("voiceInput", async (transcript) => {
+  // socket.on("voiceInput", async (transcript) => {
+  app.post("/pusher/webhook", async (req, res) => {
     console.log("Received voice input:", transcript);
 
     try {
@@ -41,7 +75,11 @@ io.on("connection", (socket) => {
       console.log(botResponse);
       // Convert the bot response to speech using text-to-speech library or service of your choice
       // Send the audio response back to the client
-      socket.emit("audioResponse", botResponse);
+      // socket.emit("audioResponse", botResponse);
+      pusher.trigger("chat-channel", "audio-response", {
+        botResponse: botResponse,
+      });
+      res.sendStatus(200);
     } catch (error) {
       console.error("OpenAI API error:", error);
     }
