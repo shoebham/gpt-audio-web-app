@@ -20,8 +20,10 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 const cors = require("cors");
 const bodyParser = require("body-parser");
+// const Pusher = require("pusher-js");
 
 const Pusher = require("pusher");
+const { log } = require("console");
 
 const pusher = new Pusher({
   appId: "1624430",
@@ -30,13 +32,8 @@ const pusher = new Pusher({
   cluster: "ap2",
   useTLS: true,
 });
-async function initializePusher() {
-  return new Promise((resolve, reject) => {
-    pusher.connection.bind("connected", resolve);
-    pusher.connection.bind("failed", reject);
-    pusher.connect();
-  });
-}
+
+console.log(pusher);
 app.use(express.static(__dirname + "/public/"));
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -78,7 +75,7 @@ app.post("/pusher/webhook", async (req, res) => {
     // Convert the bot response to speech using text-to-speech library or service of your choice
     // Send the audio response back to the client
     // socket.emit("audioResponse", botResponse);
-    pusher.trigger("chat-channel", "audio-response", {
+    await pusher.trigger("chat-channel", "audio-response", {
       botResponse: botResponse,
     });
     res.sendStatus(200).end();
@@ -87,15 +84,6 @@ app.post("/pusher/webhook", async (req, res) => {
   }
 });
 
-initializePusher()
-  .then(() => {
-    app.listen(3000, () => {
-      console.log("Server is running on port 3000");
-    });
-  })
-  .catch((error) => {
-    console.error("Pusher connection failed:", error);
-  });
 const port = 3000;
 http.listen(port, () => {
   console.log(`Server listening on port ${port}`);
