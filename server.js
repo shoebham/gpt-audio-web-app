@@ -30,7 +30,13 @@ const pusher = new Pusher({
   cluster: "ap2",
   useTLS: true,
 });
-
+async function initializePusher() {
+  return new Promise((resolve, reject) => {
+    pusher.connection.bind("connected", resolve);
+    pusher.connection.bind("failed", reject);
+    pusher.connect();
+  });
+}
 app.use(express.static(__dirname + "/public/"));
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -75,12 +81,21 @@ app.post("/pusher/webhook", async (req, res) => {
     pusher.trigger("chat-channel", "audio-response", {
       botResponse: botResponse,
     });
-    res.sendStatus(200);
+    res.sendStatus(200).end();
   } catch (error) {
     console.error("OpenAI API error:", error);
   }
 });
 
+initializePusher()
+  .then(() => {
+    app.listen(3000, () => {
+      console.log("Server is running on port 3000");
+    });
+  })
+  .catch((error) => {
+    console.error("Pusher connection failed:", error);
+  });
 const port = 3000;
 http.listen(port, () => {
   console.log(`Server listening on port ${port}`);
