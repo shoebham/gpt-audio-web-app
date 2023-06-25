@@ -12,17 +12,26 @@ const sendBtn = document.getElementById("sendBtn");
 const muteBtn = document.getElementById("muteBtn");
 const stopBtn = document.getElementById("stopBtn");
 window.utterances = [];
-let speechTimeoutId;
+var speechTimeoutId;
 const silenceTimeout = 5000;
-const Pusher = require("pusher");
 
-const pusher = new Pusher("YOUR_PUSHER_KEY", {
-  cluster: "YOUR_PUSHER_CLUSTER",
+// import pusher
+const pusher = new Pusher("ca9f7c266c48518e49ce", {
+  cluster: "ap2",
   encrypted: true,
 });
 
 const channel = pusher.subscribe("chat-channel");
-
+// Handle audio response event from Pusher
+channel.bind("audio-response", function (data) {
+  const botResponse = data.botResponse;
+  console.log("botResponse", botResponse);
+  clearInput();
+  addToChat(transcript, botResponse);
+  speak(botResponse);
+  disableBtn(muteBtn, false);
+  transcript = "";
+});
 // when page loads
 window.onload = function () {
   textInput.focus();
@@ -97,7 +106,7 @@ if ("webkitSpeechRecognition" in window) {
     if (speechTimeoutId) clearTimeout(speechTimeoutId);
     // stop after 5 seconds of silence
     speechTimeoutId = setTimeout(() => {
-      helperMessage("Detected silence, processing speech...");
+      console.log("inside timeout");
       stopRecognition();
     }, silenceTimeout);
   };
@@ -116,39 +125,27 @@ if ("webkitSpeechRecognition" in window) {
   console.error("Speech recognition not supported");
 }
 
-socket.on("connect", () => {
-  console.log("Connected to server");
-});
-socket.on("disconnect", () => {
-  console.log("Disconnected from server");
-});
-channel.bind("audio-response", function (data) {
-  const botResponse = data.botResponse;
-  console.log("Audio response:", botResponse);
-  clearInput();
-  addToChat(transcript, botResponse);
-  speak(botResponse);
-  disableBtn(muteBtn, false);
-  transcript = "";
-});
-// when server sends audio response
-socket.on("audioResponse", (response) => {
-  console.log("Audio response:", response);
-  clearInput();
-  addToChat(transcript, response);
-  speak(response);
-  disableBtn(muteBtn, false);
-  transcript = "";
-});
-
 function stopRecognition() {
   if (!isRecognitionStopped) recognition.stop();
-  if (speechTimeoutId) clearTimeout(speechTimeoutId);
+  if (speechTimeoutId) {
+    helperMessage("Silence detected. Processing speech...");
+    clearTimeout(speechTimeoutId);
+  }
   isRecognitionStopped = true;
   disableAll();
   transcript = textInput.value;
-  socket.emit("voiceInput", transcript);
-  clearInput();
+
+  // send to server with pusher
+  axios
+    .post("/pusher/webhook", { transcript })
+    .then((response) => {
+      console.log("Transcript sent to server successfully");
+      clearInput();
+    })
+    .catch((error) => {
+      console.error("Error sending transcript to server:", error);
+    });
+  // socket.emit("voiceInput", transcript);
 }
 
 function disableAll() {

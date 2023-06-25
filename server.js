@@ -18,6 +18,8 @@ const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
+const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const Pusher = require("pusher");
 
@@ -30,7 +32,9 @@ const pusher = new Pusher({
 });
 
 app.use(express.static(__dirname + "/public/"));
-
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
@@ -58,6 +62,9 @@ io.on("connection", (socket) => {
 
   // socket.on("voiceInput", async (transcript) => {
   app.post("/pusher/webhook", async (req, res) => {
+    const transcript = req.body.transcript;
+    console.log(req);
+
     console.log("Received voice input:", transcript);
 
     try {
